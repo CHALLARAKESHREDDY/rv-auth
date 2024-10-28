@@ -5,27 +5,38 @@ import * as jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../secrets";
 import { prismaClient } from "..";
 
-const authMiddleware = async (req: Request, res: Response, next:NextFunction) => {
+const authMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const token = req.headers.authorization;
   if (!token) {
-    throw new UnAuthorizedException("Unauthorized", ErrorCode.UNAUTHORIZED);
+    return next(new UnAuthorizedException("Unauthorized", ErrorCode.UNAUTHORIZED));
   }
   try {
     const payload = jwt.verify(token, SECRET_KEY) as { phoneNumber: string };
-    const user = await prismaClient.user.findFirst({
-      where: {
-        phoneNumber: payload.phoneNumber,
-      },
+    const user = await prismaClient.user.findUnique({
+      where: { phoneNumber: payload.phoneNumber },
     });
     if (!user) {
-      throw new UnAuthorizedException("Unauthorized", ErrorCode.UNAUTHORIZED);
+      return next(
+        new UnAuthorizedException(
+          "Unauthorized access: User not found",
+          ErrorCode.UNAUTHORIZED
+        )
+      );
     }
-   
-      req.user = user
-      next()
+    req.user= user;
+    return next();
   } catch (err) {
-    throw new UnAuthorizedException("Unauthorized", ErrorCode.UNAUTHORIZED);
+    return next(
+      new UnAuthorizedException(
+        "Unauthorized access: Invalid or expired token",
+        ErrorCode.UNAUTHORIZED
+      )
+    );
   }
 };
 
-export default authMiddleware
+export default authMiddleware;

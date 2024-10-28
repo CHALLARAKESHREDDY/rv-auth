@@ -17,7 +17,7 @@ export const errorHandler = (
         exception = new UnprocessableEntity(
           "Validation error",
           err,
-          ErrorCode.UNPROCESSABLEE_ENTITY
+          ErrorCode.UNPROCESSABLE_ENTITY
         );
       } else if (err instanceof RootException) {
         exception = err;
