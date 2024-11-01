@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { ZodError } from "zod"; // Import ZodError to handle schema validation errors
+import { ZodError } from "zod";
 import { RootException, ErrorCode } from "./exceptions/root";
 import { InternalException } from "./exceptions/unhandled";
 import { UnprocessableEntity } from "./exceptions/validation";
@@ -29,7 +29,7 @@ export const errorHandler = (
         );
       }
 
-      next(exception); // Pass the exception to the next middleware (usually a global error handler)
+      next(exception);
     }
   };
 };
