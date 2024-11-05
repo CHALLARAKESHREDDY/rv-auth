@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prismaClient } from "..";
+import { prisma} from "../prisma";
 import otpGenerator from "otp-generator";
 import { hash, compare } from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -13,7 +13,6 @@ import {
 } from "../schema/auth";
 import { NotFoundException } from "../exceptions/not-found";
 
-const OTP_EXPIRATION_MINUTES = 4;
 
 export const signup = async (req: Request, res: Response) => {
   // Validate input data using SignupSchema
@@ -22,7 +21,7 @@ export const signup = async (req: Request, res: Response) => {
   const { phoneNumber, email } = req.body;
 
   // Check if the user already exists
-  const user = await prismaClient.user.findFirst({
+  const user = await prisma.user.findFirst({
     where: {
       OR: [{ email }, { phoneNumber }],
     },
@@ -46,7 +45,7 @@ export const signup = async (req: Request, res: Response) => {
   const hashedOtp = await hash(generatedOtp, 10);
 
   // Save the OTP in the database
-  await prismaClient.otp.create({
+  await prisma.otp.create({
     data: {
       hashedOtp: hashedOtp,
       phoneNumber: phoneNumber,
@@ -59,11 +58,12 @@ export const signup = async (req: Request, res: Response) => {
 
 
 
+
 export const login = async (req: Request, res: Response) => {
   const { phoneNumber } = req.body;
 
   // Check if the user exists
-  const user = await prismaClient.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { phoneNumber },
   });
 
@@ -83,7 +83,7 @@ export const login = async (req: Request, res: Response) => {
   const hashedOtp = await hash(generatedOtp, 10);
 
   // Save the OTP to the database
-  await prismaClient.otp.create({
+  await prisma.otp.create({
     data: {
       hashedOtp: hashedOtp,
       phoneNumber,
@@ -91,7 +91,7 @@ export const login = async (req: Request, res: Response) => {
   });
 
   // Send success response
-  res.json({ message: "OTP sent successfully" });
+  res.json({ message: "OTP sent successfully"});
 };
 
 
@@ -104,7 +104,7 @@ export const signupVerifyOtp = async (req: Request, res: Response) => {
   const { name, phoneNumber, email, occupation, otp } = req.body;
 
   // Find stored OTP for the provided phone number
-  const storedOtp = await prismaClient.otp.findFirst({
+  const storedOtp = await prisma.otp.findFirst({
     where: { phoneNumber },
     orderBy: {
       createdAt: "desc", // Orders by the newest OTP first
@@ -121,7 +121,7 @@ export const signupVerifyOtp = async (req: Request, res: Response) => {
     (Date.now() - createdAt.getTime()) / 60000
   );
 
-  if (differenceInMinutes > OTP_EXPIRATION_MINUTES) {
+  if (differenceInMinutes > 4) {
     throw new NotFoundException("OTP Expired", ErrorCode.OTP_EXPIRED);
   }
 
@@ -134,15 +134,15 @@ export const signupVerifyOtp = async (req: Request, res: Response) => {
   }
 
   // Create user
-  const user = await prismaClient.user.create({
+  const user = await prisma.user.create({
     data: { name, phoneNumber, email, occupation },
   });
 
   // Delete all OTPs after successful signup
-  await prismaClient.otp.deleteMany({ where: { phoneNumber } });
+  await prisma.otp.deleteMany({ where: { phoneNumber } });
 
   // Generate JWT token
-  const token = jwt.sign({ phoneNumber }, SECRET_KEY);
+  const token = jwt.sign({ phoneNumber, id:user.id}, SECRET_KEY);
 
   res.json({ message: "Signup Successful", jwt: token });
 };
@@ -154,10 +154,18 @@ export const loginVerifyOtp = async (req: Request, res: Response) => {
   // Validate request body
   LoginVerifySchema.parse(req.body);
 
-  const { phoneNumber, otp } = req.body;
+  const { phoneNumber, otp} = req.body;
+
+   const user = await prisma.user.findUnique({
+     where: { phoneNumber },
+   });
+
+    if (!user) {
+      throw new NotFoundException("User Not Found!", ErrorCode.USER_NOT_FOUND);
+    }
 
   // Find stored OTP for the provided phone number
-  const storedOtp = await prismaClient.otp.findFirst({
+  const storedOtp = await prisma.otp.findFirst({
     where: { phoneNumber },
     orderBy: {
       createdAt: "desc", // Orders by the newest OTP first
@@ -173,7 +181,7 @@ export const loginVerifyOtp = async (req: Request, res: Response) => {
     (Date.now() - createdAt.getTime()) / 60000
   );
 
-  if (differenceInMinutes > OTP_EXPIRATION_MINUTES) {
+  if (differenceInMinutes > 4) {
     throw new NotFoundException("OTP Expired", ErrorCode.OTP_EXPIRED);
   }
 
@@ -186,9 +194,11 @@ export const loginVerifyOtp = async (req: Request, res: Response) => {
   }
 
   // Delete all OTPs after successful signup
-  await prismaClient.otp.deleteMany({ where: { phoneNumber } });
+  await prisma.otp.deleteMany({ where: { phoneNumber } });
 
-  const token = jwt.sign({ phoneNumber }, SECRET_KEY);
+  const token = jwt.sign({ phoneNumber, id: user.id}, SECRET_KEY);
 
   res.json({ message: "Login Successful", jwt: token });
 };
+
+

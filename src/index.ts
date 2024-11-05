@@ -1,8 +1,9 @@
 import express, { Express } from "express";
 import { PORT } from "./secrets";
 import rootRouter from "./routes";
-import { PrismaClient } from "@prisma/client";
 import { errorMiddleware } from "./middlewares/errorMiddleware";
+import { healthCheck } from "./components/health-check";
+import { gracefulShutdown } from "./components/shutdown";
 
 const app: Express = express();
 
@@ -10,11 +11,19 @@ app.use(express.json());
 
 app.use("/", rootRouter);
 
-export const prismaClient = new PrismaClient(/*{ log: ["query"] }*/);
+app.get("/health", healthCheck)
 
 app.use(errorMiddleware);
 
-app.listen(PORT, () => {
-  console.clear();
-  console.log("server is running on port 3000");
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
 });
+
+
+export const server=app.listen(PORT, () => {
+  console.log(`server is running on port ${PORT}`);
+});
+
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));

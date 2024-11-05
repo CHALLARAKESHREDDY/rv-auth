@@ -16,7 +16,7 @@ export const errorHandler = (
       if (err instanceof ZodError) {
         exception = new UnprocessableEntity(
           "Validation error",
-          err,
+          err.issues[0].path,
           ErrorCode.UNPROCESSABLE_ENTITY
         );
       } else if (err instanceof RootException) {

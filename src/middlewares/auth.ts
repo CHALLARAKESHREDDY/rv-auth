@@ -3,7 +3,7 @@ import { UnAuthorizedException } from "../exceptions/unauthorized";
 import { ErrorCode } from "../exceptions/root";
 import * as jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../secrets";
-import { prismaClient } from "..";
+import { prisma } from "../prisma";
 
 const authMiddleware = async (
   req: Request,
@@ -16,7 +16,7 @@ const authMiddleware = async (
   }
   try {
     const payload = jwt.verify(token, SECRET_KEY) as { phoneNumber: string };
-    const user = await prismaClient.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { phoneNumber: payload.phoneNumber },
     });
     if (!user) {
