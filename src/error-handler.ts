@@ -11,6 +11,7 @@ export const errorHandler = (
     try {
       await method(req, res, next);
     } catch (err) {
+        console.log(err)
       let exception: RootException;
 
       if (err instanceof ZodError) {

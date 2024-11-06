@@ -1,18 +1,17 @@
 import { Request, Response } from "express";
-import { prisma} from "../prisma";
+import { prisma } from "../prisma";
 import otpGenerator from "otp-generator";
 import { hash, compare } from "bcrypt";
 import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../secrets";
 import { BadRequestException } from "../exceptions/bad-request";
-import { ErrorCode } from "../exceptions/root";
+import { ErrorCode, SuccessCode } from "../exceptions/root";
 import {
   LoginVerifySchema,
   SignupSchema,
   SignupVerifySchema,
 } from "../schema/auth";
 import { NotFoundException } from "../exceptions/not-found";
-
 
 export const signup = async (req: Request, res: Response) => {
   // Validate input data using SignupSchema
@@ -25,10 +24,13 @@ export const signup = async (req: Request, res: Response) => {
     where: {
       OR: [{ email }, { phoneNumber }],
     },
+    select: {
+      id: true,
+    },
   });
 
   if (user) {
-    throw new BadRequestException( 
+    throw new BadRequestException(
       "User already exists!",
       ErrorCode.USER_ALREADY_EXISTS
     );
@@ -50,14 +52,17 @@ export const signup = async (req: Request, res: Response) => {
       hashedOtp: hashedOtp,
       phoneNumber: phoneNumber,
     },
+    select: {
+      id: true,
+      hashedOtp: true,
+    },
   });
-
   // Send a success response
-  res.json({ message: "OTP sent successfully" });
+  res.json({
+    message: "OTP sent successfully",
+    successCode: SuccessCode.OTP_SENT_SUCCESSFULLY,
+  });
 };
-
-
-
 
 export const login = async (req: Request, res: Response) => {
   const { phoneNumber } = req.body;
@@ -65,6 +70,9 @@ export const login = async (req: Request, res: Response) => {
   // Check if the user exists
   const user = await prisma.user.findUnique({
     where: { phoneNumber },
+    select: {
+      id: true,
+    },
   });
 
   if (!user) {
@@ -88,14 +96,18 @@ export const login = async (req: Request, res: Response) => {
       hashedOtp: hashedOtp,
       phoneNumber,
     },
+    select: {
+      id: true,
+      hashedOtp: true,
+    },
   });
 
   // Send success response
-  res.json({ message: "OTP sent successfully"});
+  res.json({
+    message: "OTP sent successfully",
+    successCode: SuccessCode.OTP_SENT_SUCCESSFULLY,
+  });
 };
-
-
-
 
 export const signupVerifyOtp = async (req: Request, res: Response) => {
   // Validate request body with Zod schema
@@ -130,39 +142,42 @@ export const signupVerifyOtp = async (req: Request, res: Response) => {
 
   // Verify OTP
   if (!isValidOtp) {
-    throw new BadRequestException("Invalid OTP", ErrorCode.OTP_INVALID);
+    throw new BadRequestException("Invalid OTP", ErrorCode.INCORRECT_OTP);
   }
 
-  // Create user
-  const user = await prisma.user.create({
-    data: { name, phoneNumber, email, occupation },
-  });
-
-  // Delete all OTPs after successful signup
-  await prisma.otp.deleteMany({ where: { phoneNumber } });
+const user = await prisma.$transaction((tx) =>
+      tx.user
+        .create({
+          data: { name, phoneNumber, email, occupation },
+          select: { id: true },
+        })
+        .then((createdUser) =>
+          tx.otp.deleteMany({ where: { phoneNumber } }).then(() => createdUser)
+        )
+    );
 
   // Generate JWT token
-  const token = jwt.sign({ phoneNumber, id:user.id}, SECRET_KEY);
+  const token = jwt.sign({ phoneNumber, id: user.id }, SECRET_KEY);
 
-  res.json({ message: "Signup Successful", jwt: token });
+  res.json({ message: "Signup Successful", jwt: token, successCode:SuccessCode.SIGNUP_SUCCESSFUL });
 };
-
-
-
 
 export const loginVerifyOtp = async (req: Request, res: Response) => {
   // Validate request body
   LoginVerifySchema.parse(req.body);
 
-  const { phoneNumber, otp} = req.body;
+  const { phoneNumber, otp } = req.body;
 
-   const user = await prisma.user.findUnique({
-     where: { phoneNumber },
-   });
+  const user = await prisma.user.findUnique({
+    where: { phoneNumber },
+    select: {
+      id: true,
+    },
+  });
 
-    if (!user) {
-      throw new NotFoundException("User Not Found!", ErrorCode.USER_NOT_FOUND);
-    }
+  if (!user) {
+    throw new NotFoundException("User Not Found!", ErrorCode.USER_NOT_FOUND);
+  }
 
   // Find stored OTP for the provided phone number
   const storedOtp = await prisma.otp.findFirst({
@@ -196,9 +211,7 @@ export const loginVerifyOtp = async (req: Request, res: Response) => {
   // Delete all OTPs after successful signup
   await prisma.otp.deleteMany({ where: { phoneNumber } });
 
-  const token = jwt.sign({ phoneNumber, id: user.id}, SECRET_KEY);
+  const token = jwt.sign({ phoneNumber, id: user.id }, SECRET_KEY);
 
-  res.json({ message: "Login Successful", jwt: token });
+  res.json({ message: "Login Successful", jwt: token , successCode: SuccessCode.LOGIN_SUCCESSFUL});
 };
-
-

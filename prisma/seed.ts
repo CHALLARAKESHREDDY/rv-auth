@@ -4,7 +4,17 @@ import { faker } from "@faker-js/faker";
 const prisma = new PrismaClient();
 
 async function main() {
-  for (let i = 0; i < 1000; i++) {
+   const count= await prisma.user.count()
+   console.log(count)
+   const user = await prisma.user.findFirst({
+     where: {
+       id: 10901,
+     },
+   });
+   console.log(user)
+
+  for (let i = 0; i < 10000; i++) {
+    
     await prisma.user.create({
       data: {
         name: faker.internet.username(),

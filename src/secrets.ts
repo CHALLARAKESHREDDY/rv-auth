@@ -6,4 +6,4 @@ export const PORT = process.env.PORT;
 
 export const SECRET_KEY = process.env.JWT_SECRET_KEY!;
 
-export const OTP_EXPIRATION_MINUTES = process.env.OTP_EXPIRATION_MINUTES
+export const PRISMA_OPTIMIZE_TOKEN = process.env.PRISMA_OPTIMIZE_TOKEN!
