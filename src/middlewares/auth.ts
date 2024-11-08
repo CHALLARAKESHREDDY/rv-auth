@@ -16,7 +16,7 @@ const authMiddleware = async (
   }
   try {
     const payload = jwt.verify(token, SECRET_KEY) as { phoneNumber: string };
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { phoneNumber: payload.phoneNumber },
     });
     if (!user) {

@@ -1,45 +1,286 @@
 generator client {
-  provider = "prisma-client-js"
-  previewFeatures = ["tracing"]
+    provider        = "prisma-client-js"
+    previewFeatures = ["tracing"]
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+    provider = "mysql"
+    url      = env("DATABASE_URL")
 }
 
-model User {
-  id           Int              @id @default(autoincrement())
-  name         String           @db.VarChar(30)
-  phoneNumber  String           @unique @db.VarChar(10)
-  email        String?          @unique @db.VarChar(50)
-  occupation   users_occupation
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
+model Users {
+    id          Int             @id @default(autoincrement())
+    name        String          @db.VarChar(30)
+    phoneNumber String          @unique @db.VarChar(10)
+    email       String?         @unique @db.VarChar(50)
+    occupation  UsersOccupation
+    createdAt   DateTime        @default(now())
+    updatedAt   DateTime        @updatedAt
+    cattle      Cattle[]
+    myposts     MyPosts[]
+    farmtools   FarmTools[]
+    veterinary  Veterinarian?
+    vetRating   VetRating[]
+    technician  Technicians?
+    techRating  TechRating[]
 
-  @@index([email])
-  @@index([phoneNumber])
-  @@index([email, phoneNumber])
-  @@map("users")
+    @@index([email])
+    @@index([phoneNumber])
+    @@index([email, phoneNumber])
+    @@map("users")
 }
 
 model Otp {
-  id          Int      @id @default(autoincrement())
-  hashedOtp   String   @db.VarChar(255)
-  phoneNumber String   @db.VarChar(10)
-  createdAt   DateTime @default(now())
+    id          Int      @id @default(autoincrement())
+    hashedOtp   String   @db.VarChar(255)
+    phoneNumber String   @db.VarChar(10)
+    createdAt   DateTime @default(now())
 
-  @@index([phoneNumber])
-  @@map("otps")
+    @@index([phoneNumber])
+    @@map("otps")
+}
+
+model Cattle {
+    id              Int             @id @default(autoincrement())
+    //type            CattleType   
+    name            String
+    description     String?
+    age             Int?
+    breed           String?
+    weight          Float?
+    price           Int?
+    milkYield       Float?
+    location        String
+    latitude        Float?
+    longitude       Float?
+    postedById      Int
+    status          ActiveStatus    @default(ACTIVE)
+    deliveryOptions DeliveryOptions @default(SELF_PICKUP)
+    contactInfo     String?
+    createdAt       DateTime        @default(now())
+    updatedAt       DateTime        @updatedAt
+    users           Users           @relation(fields: [postedById], references: [id], onDelete: Cascade)
+    images          CattleImages[]
+
+    @@index([latitude, longitude])
+    @@index([name])
+    //@@index([type])
+    @@index([postedById], map: "cattle_postedById_fkey")
+    @@map("cattle")
+}
+
+model CattleImages {
+    id        Int      @id @default(autoincrement())
+    url       String
+    cattleId  Int
+    createdAt DateTime @default(now())
+    cattle    Cattle   @relation(fields: [cattleId], references: [id], onDelete: Cascade)
+
+    @@index([cattleId], map: "cattle_images_cattleId_fkey")
+    @@map("cattle_images")
 }
 
 
-enum users_occupation {
-  FARMER
+enum CattleType {
+    COW
+    BUFFALO
+    SHEEP
+    GOAT
+    HEN
+    DOG
+    PIG
+    OTHERS
+}
+
+enum UsersOccupation {
+    FARMER
+    ELECTRICIAN
+    VETERINARY
+    FARMLABOUR
+    MECHANIC
+    GUEST
+}
+
+enum ActiveStatus {
+    ACTIVE
+    INACTIVE
+}
+
+enum ItemType {
+    CATTLE
+    TOOL
+    CROP
+}
+
+enum ToolType {
+    MACHINERY
+    SPRAYERS
+    HAND_TOOLS
+    IRRIGATION_TOOLS
+    SAFETY_TOOLS
+    OTHER_TOOLS
+}
+
+enum Condition {
+    New
+    Used
+    Refurbished
+}
+
+enum DeliveryOptions {
+    SELF_PICKUP
+    DELIVERY_AVAILABLE
+}
+
+model MyPosts {
+    id        Int      @id @default(autoincrement())
+    userId    Int
+    itemType  ItemType // Can be 'CATTLE', 'TOOL', etc.
+    itemId    Int // ID from the corresponding product table
+    createdAt DateTime @default(now())
+
+    user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([itemId])
+    @@index([itemType])
+    @@index([userId, itemId, itemType])
+    @@map("myposts")
+}
+
+model FarmTools {
+    id              Int              @id @default(autoincrement())
+    name            String
+    type            ToolType
+    description     String?
+    price           Int?
+    location        String
+    latitude        Float?
+    longitude       Float?
+    postedById      Int
+    status          ActiveStatus     @default(ACTIVE)
+    deliveryOptions DeliveryOptions  @default(SELF_PICKUP)
+    condition       Condition        @default(New)
+    contactInfo     String?
+    createdAt       DateTime         @default(now())
+    updatedAt       DateTime         @updatedAt
+    purchaseYear    Int?
+    images          FarmToolImages[]
+    postedBy        Users            @relation(fields: [postedById], references: [id], onDelete: Cascade)
+
+    @@index([name])
+    @@index([latitude, longitude])
+    @@index([type])
+    @@index([postedById], map: "farm_tools_postedById_fkey")
+    @@map("farm_tools")
+}
+
+model FarmToolImages {
+    id         Int       @id @default(autoincrement())
+    url        String
+    farmToolId Int
+    createdAt  DateTime  @default(now())
+    farmTool   FarmTools @relation(fields: [farmToolId], references: [id], onDelete: Cascade)
+
+    @@index([farmToolId], map: "farm_tool_images_farmToolId_fkey")
+    @@map("farm_tool_images")
+}
+
+
+enum VetSpecialty {
+  GENERAL
+  SURGEON
+  NUTRITION
+  DENTAL
+}
+
+enum TechType {
   ELECTRICIAN
-  VETERINARY
-  FARMLABOUR
   MECHANIC
-  GUEST
 }
 
+enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    BUSY
+}
+
+model Veterinarian {
+  id         Int          @id @default(autoincrement())
+  userId     Int          @unique // Connects to registered user
+  user       Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty  VetSpecialty @default(GENERAL) // Enum for area of expertise
+  experience Int? // Number of years of experience
+  verified   Boolean      @default(false)
+  location   String
+  latitude   Float?
+  longitude  Float?
+  info       String?
+  imageUrl   String?
+  ratings    VetRating[]
+  averageRating Float? @default(0)
+  ratingCount  Int @default(0)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([latitude, longitude])
+  @@index(userId)
+  @@index(verified)
+  @@map("veterinarian")
+}
+
+model VetRating {
+  id             Int          @id @default(autoincrement())
+  userId         Int // ID of user giving the rating
+  veterinarianId Int // ID of veterinarian being rated
+  user           Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  veterinarian   Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Cascade)
+  rating         Int
+  comment        String?
+  createdAt      DateTime     @default(now())
+
+  @@index(userId)
+  @@index(veterinarianId)
+  @@map("vet_ratings")
+}
+
+
+model Technicians {
+  id         Int          @id @default(autoincrement())
+  userId     Int          @unique // Connects to registered user
+  user       Users       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type       TechType     @default(ELECTRICIAN)
+  experience Int? // Number of years of experience
+  location   String
+  latitude   Float?
+  longitude  Float?
+  availability AvailabilityStatus @default(AVAILABLE)
+  info       String?
+  imageUrl   String?
+  ratings    TechRating[]
+  averageRating Float? @default(0)
+  ratingCount  Int @default(0)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([latitude, longitude])
+  @@index(userId)
+  @@index(type)
+  @@map("technicians")
+}
+
+
+model TechRating {
+  id           Int         @id @default(autoincrement())
+  userId       Int // ID of user giving the rating
+  technicianId Int // ID of veterinarian being rated
+  user         Users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  technician   Technicians @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  rating       Int
+  comment      String?
+  createdAt    DateTime    @default(now())
+
+  @@index(userId)
+  @@index(technicianId)
+  @@map("tech_ratings")
+}

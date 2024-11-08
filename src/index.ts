@@ -1,7 +1,7 @@
 import express, { Express } from "express";
 import { PORT } from "./secrets";
 import rootRouter from "./routes";
-import { errorMiddleware } from "./middlewares/errorMiddleware";
+import { errorMiddleware } from "./middlewares/error-middleware";
 import { healthCheck } from "./components/health-check";
 import { gracefulShutdown } from "./components/shutdown";
 

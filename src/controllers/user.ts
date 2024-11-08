@@ -12,7 +12,7 @@ export const getUserDetails = async (
 
 export const updateUserDetails = async (req:Request, res: Response, next:NextFunction)=>{
     const validatedData=userUpdateDetailsSchema.parse(req.body)
-     const updatedUser = await prisma.user.update({
+     const updatedUser = await prisma.users.update({
        where: { id: req.user?.id },
        data: validatedData,
      });

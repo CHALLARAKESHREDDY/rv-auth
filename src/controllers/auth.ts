@@ -20,7 +20,7 @@ export const signup = async (req: Request, res: Response) => {
   const { phoneNumber, email } = req.body;
 
   // Check if the user already exists
-  const user = await prisma.user.findFirst({
+  const user = await prisma.users.findFirst({
     where: {
       OR: [{ email }, { phoneNumber }],
     },
@@ -68,7 +68,7 @@ export const login = async (req: Request, res: Response) => {
   const { phoneNumber } = req.body;
 
   // Check if the user exists
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { phoneNumber },
     select: {
       id: true,
@@ -102,7 +102,6 @@ export const login = async (req: Request, res: Response) => {
     },
   });
 
-  // Send success response
   res.json({
     message: "OTP sent successfully",
     successCode: SuccessCode.OTP_SENT_SUCCESSFULLY,
@@ -146,7 +145,7 @@ export const signupVerifyOtp = async (req: Request, res: Response) => {
   }
 
 const user = await prisma.$transaction((tx) =>
-      tx.user
+      tx.users
         .create({
           data: { name, phoneNumber, email, occupation },
           select: { id: true },
@@ -168,7 +167,7 @@ export const loginVerifyOtp = async (req: Request, res: Response) => {
 
   const { phoneNumber, otp } = req.body;
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { phoneNumber },
     select: {
       id: true,
