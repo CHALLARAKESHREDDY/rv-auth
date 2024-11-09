@@ -1,13 +1,15 @@
 import { Router } from "express";
 import { errorHandler } from "../error-handler";
-import { getUserDetails, updateUserDetails } from "../controllers/user";
+import { getMyPosts, getUserDetails, updateUserDetails } from "../controllers/user";
 import authMiddleware from '../middlewares/auth';
 
 const userRoutes: Router = Router();
 
 
-userRoutes.get("/user-details", [authMiddleware], errorHandler(getUserDetails)) 
-userRoutes.put("/update-user-details", [authMiddleware], errorHandler(updateUserDetails)); 
+userRoutes.get("/", [authMiddleware], errorHandler(getUserDetails)) 
+userRoutes.put("/", [authMiddleware], errorHandler(updateUserDetails)); 
+userRoutes.get("/myposts", [authMiddleware], errorHandler(getMyPosts));
+userRoutes.delete("/mypost/:id", [authMiddleware], errorHandler(getMyPosts)); 
 
 
 export default userRoutes;

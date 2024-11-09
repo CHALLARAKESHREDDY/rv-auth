@@ -80,7 +80,6 @@ model CattleImages {
     @@map("cattle_images")
 }
 
-
 enum CattleType {
     COW
     BUFFALO
@@ -186,17 +185,16 @@ model FarmToolImages {
     @@map("farm_tool_images")
 }
 
-
 enum VetSpecialty {
-  GENERAL
-  SURGEON
-  NUTRITION
-  DENTAL
+    GENERAL
+    SURGEON
+    NUTRITION
+    DENTAL
 }
 
 enum TechType {
-  ELECTRICIAN
-  MECHANIC
+    ELECTRICIAN
+    MECHANIC
 }
 
 enum AvailabilityStatus {
@@ -206,81 +204,82 @@ enum AvailabilityStatus {
 }
 
 model Veterinarian {
-  id         Int          @id @default(autoincrement())
-  userId     Int          @unique // Connects to registered user
-  user       Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  specialty  VetSpecialty @default(GENERAL) // Enum for area of expertise
-  experience Int? // Number of years of experience
-  verified   Boolean      @default(false)
-  location   String
-  latitude   Float?
-  longitude  Float?
-  info       String?
-  imageUrl   String?
-  ratings    VetRating[]
-  averageRating Float? @default(0)
-  ratingCount  Int @default(0)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+    id            Int          @id @default(autoincrement())
+    userId        Int          @unique // Connects to registered user
+    user          Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    specialty     VetSpecialty @default(GENERAL) // Enum for area of expertise
+    experience    Int? // Number of years of experience
+    verified      Boolean      @default(false)
+    //availability  AvailabilityStatus    @default(AVAILABLE)
+    location      String
+    latitude      Float?
+    longitude     Float?
+    info          String?
+    imageUrl      String?
+    ratings       VetRating[]
+    averageRating Float?       @default(0)
+    ratingCount   Int          @default(0)
+    createdAt     DateTime     @default(now())
+    updatedAt     DateTime     @updatedAt
 
-  @@index([latitude, longitude])
-  @@index(userId)
-  @@index(verified)
-  @@map("veterinarian")
+    @@index([latitude, longitude])
+    @@index(userId)
+    @@index(verified)
+    @@map("veterinarian")
 }
 
 model VetRating {
-  id             Int          @id @default(autoincrement())
-  userId         Int // ID of user giving the rating
-  veterinarianId Int // ID of veterinarian being rated
-  user           Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  veterinarian   Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Cascade)
-  rating         Int
-  comment        String?
-  createdAt      DateTime     @default(now())
+    id             Int          @id @default(autoincrement())
+    userId         Int // ID of user giving the rating
+    veterinarianId Int // ID of veterinarian being rated
+    user           Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    veterinarian   Veterinarian @relation(fields: [veterinarianId], references: [id], onDelete: Cascade)
+    rating         Int
+    comment        String?
+    createdAt      DateTime     @default(now())
 
-  @@index(userId)
-  @@index(veterinarianId)
-  @@map("vet_ratings")
+    @@index(userId)
+    @@index(veterinarianId)
+    @@map("vet_ratings")
 }
-
 
 model Technicians {
-  id         Int          @id @default(autoincrement())
-  userId     Int          @unique // Connects to registered user
-  user       Users       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type       TechType     @default(ELECTRICIAN)
-  experience Int? // Number of years of experience
-  location   String
-  latitude   Float?
-  longitude  Float?
-  availability AvailabilityStatus @default(AVAILABLE)
-  info       String?
-  imageUrl   String?
-  ratings    TechRating[]
-  averageRating Float? @default(0)
-  ratingCount  Int @default(0)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+    id            Int                @id @default(autoincrement())
+    userId        Int                @unique // Connects to registered user
+    user          Users              @relation(fields: [userId], references: [id], onDelete: Cascade)
+    type          TechType           @default(ELECTRICIAN)
+    experience    Int? // Number of years of experience
+    location      String
+    latitude      Float?
+    longitude     Float?
+    availability  AvailabilityStatus @default(AVAILABLE)
+    info          String?
+    imageUrl      String?
+    ratings       TechRating[]
+    averageRating Float?             @default(0)
+    ratingCount   Int                @default(0)
+    createdAt     DateTime           @default(now())
+    updatedAt     DateTime           @updatedAt
 
-  @@index([latitude, longitude])
-  @@index(userId)
-  @@index(type)
-  @@map("technicians")
+    @@index([latitude, longitude])
+    @@index(userId)
+    @@index(type)
+    @@map("technicians")
 }
-
 
 model TechRating {
-  id           Int         @id @default(autoincrement())
-  userId       Int // ID of user giving the rating
-  technicianId Int // ID of veterinarian being rated
-  user         Users      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  technician   Technicians @relation(fields: [technicianId], references: [id], onDelete: Cascade)
-  rating       Int
-  comment      String?
-  createdAt    DateTime    @default(now())
+    id           Int         @id @default(autoincrement())
+    userId       Int // ID of user giving the rating
+    technicianId Int // ID of veterinarian being rated
+    user         Users       @relation(fields: [userId], references: [id], onDelete: Cascade)
+    technician   Technicians @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+    rating       Int
+    comment      String?
+    createdAt    DateTime    @default(now())
 
-  @@index(userId)
-  @@index(technicianId)
-  @@map("tech_ratings")
+    @@index(userId)
+    @@index(technicianId)
+    @@map("tech_ratings")
 }
+
+
