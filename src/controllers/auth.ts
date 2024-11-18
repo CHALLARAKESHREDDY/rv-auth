@@ -15,6 +15,7 @@ import { NotFoundException } from "../exceptions/not-found";
 
 export const signup = async (req: Request, res: Response) => {
   // Validate input data using SignupSchema
+  console.log(req.body)
   SignupSchema.parse(req.body);
 
   const { phoneNumber, email } = req.body;
@@ -53,10 +54,9 @@ export const signup = async (req: Request, res: Response) => {
       phoneNumber: phoneNumber,
     },
     select: {
-      id: true,
-      hashedOtp: true,
-    },
-  });
+      id: true
+    }
+    });
   // Send a success response
   res.json({
     message: "OTP sent successfully",
@@ -66,20 +66,17 @@ export const signup = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
   const { phoneNumber } = req.body;
+  console.log(phoneNumber);
 
-  // Check if the user exists
   const user = await prisma.users.findUnique({
     where: { phoneNumber },
-    select: {
-      id: true,
-    },
+    select: { id: true },
   });
-
+  
   if (!user) {
     throw new NotFoundException("User Not Found!", ErrorCode.USER_NOT_FOUND);
   }
 
-  // Generate a new OTP
   const generatedOtp = otpGenerator.generate(4, {
     upperCaseAlphabets: false,
     specialChars: false,
@@ -105,12 +102,14 @@ export const login = async (req: Request, res: Response) => {
   res.json({
     message: "OTP sent successfully",
     successCode: SuccessCode.OTP_SENT_SUCCESSFULLY,
+    farmerId:user.id
   });
 };
 
 export const signupVerifyOtp = async (req: Request, res: Response) => {
   // Validate request body with Zod schema
   SignupVerifySchema.parse(req.body);
+  console.log(req.body)
 
   const { name, phoneNumber, email, occupation, otp } = req.body;
 
@@ -144,21 +143,26 @@ export const signupVerifyOtp = async (req: Request, res: Response) => {
     throw new BadRequestException("Invalid OTP", ErrorCode.INCORRECT_OTP);
   }
 
-const user = await prisma.$transaction((tx) =>
-      tx.users
-        .create({
-          data: { name, phoneNumber, email, occupation },
-          select: { id: true },
-        })
-        .then((createdUser) =>
-          tx.otp.deleteMany({ where: { phoneNumber } }).then(() => createdUser)
-        )
-    );
+  const user = await prisma.$transaction((tx) =>
+    tx.users
+      .create({
+        data: { name, phoneNumber, email, occupation },
+        select: { id: true },
+      })
+      .then((createdUser) =>
+        tx.otp.deleteMany({ where: { phoneNumber } }).then(() => createdUser)
+      )
+  );
 
   // Generate JWT token
   const token = jwt.sign({ phoneNumber, id: user.id }, SECRET_KEY);
 
-  res.json({ message: "Signup Successful", jwt: token, successCode:SuccessCode.SIGNUP_SUCCESSFUL });
+  res.json({
+    message: "Signup Successful",
+    jwt: token,
+    successCode: SuccessCode.SIGNUP_SUCCESSFUL,
+    userId:user.id
+  });
 };
 
 export const loginVerifyOtp = async (req: Request, res: Response) => {
@@ -204,7 +208,7 @@ export const loginVerifyOtp = async (req: Request, res: Response) => {
 
   // Verify OTP
   if (!isValidOtp) {
-    throw new BadRequestException("Invalid OTP", ErrorCode.OTP_INVALID);
+    throw new BadRequestException("Invalid OTP", ErrorCode.INCORRECT_OTP);
   }
 
   // Delete all OTPs after successful signup
@@ -212,5 +216,10 @@ export const loginVerifyOtp = async (req: Request, res: Response) => {
 
   const token = jwt.sign({ phoneNumber, id: user.id }, SECRET_KEY);
 
-  res.json({ message: "Login Successful", jwt: token , successCode: SuccessCode.LOGIN_SUCCESSFUL});
+  res.json({
+    message: "Login Successful",
+    jwt: token,
+    successCode: SuccessCode.LOGIN_SUCCESSFUL,
+    userId:user.id
+  });
 };

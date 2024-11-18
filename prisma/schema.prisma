@@ -10,7 +10,7 @@ datasource db {
 
 model Users {
     id          Int             @id @default(autoincrement())
-    name        String          @db.VarChar(30)
+    name        String          @db.VarChar(20)
     phoneNumber String          @unique @db.VarChar(10)
     email       String?         @unique @db.VarChar(50)
     occupation  UsersOccupation
@@ -92,12 +92,11 @@ enum CattleType {
 }
 
 enum UsersOccupation {
-    FARMER
-    ELECTRICIAN
-    VETERINARY
-    FARMLABOUR
-    MECHANIC
-    GUEST
+    Farmer
+    Electrician
+    Veterinary
+    Mechanic
+    Guest
 }
 
 enum ActiveStatus {
