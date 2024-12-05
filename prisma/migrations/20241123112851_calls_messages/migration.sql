@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `users` ADD COLUMN `calls` BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN `messages` BOOLEAN NOT NULL DEFAULT true;

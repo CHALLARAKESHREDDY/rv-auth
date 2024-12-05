@@ -9,24 +9,29 @@ datasource db {
 }
 
 model Users {
-    id          Int             @id @default(autoincrement())
-    name        String          @db.VarChar(20)
-    phoneNumber String          @unique @db.VarChar(10)
-    email       String?         @unique @db.VarChar(50)
-    occupation  UsersOccupation
-    createdAt   DateTime        @default(now())
-    updatedAt   DateTime        @updatedAt
-    cattle      Cattle[]
-    myposts     MyPosts[]
-    farmtools   FarmTools[]
-    veterinary  Veterinarian?
-    vetRating   VetRating[]
-    technician  Technicians?
-    techRating  TechRating[]
+    id             Int              @id @default(autoincrement())
+    userName       String           @db.VarChar(20)
+    phoneNumber    String           @unique @db.VarChar(10)
+    email          String?          @unique @db.VarChar(50)
+    occupation     UsersOccupation
+    calls          Boolean          @default(true)
+    messages       Boolean          @default(true)
+    imageUrl       String?
+    createdAt      DateTime         @default(now())
+    updatedAt      DateTime         @updatedAt
+    cattle         Cattle[]
+    myposts        MyPosts[]
+    wishlist       Wishlist[]
+    farmtools      Tools[]
+    harvest        Harvest[]
+    transportation Transportation[]
+    veterinary     Veterinarian?
+    vetRating      VetRating[]
+    technician     Technicians?
+    techRating     TechRating[]
 
-    @@index([email])
+    @@unique([email, phoneNumber])
     @@index([phoneNumber])
-    @@index([email, phoneNumber])
     @@map("users")
 }
 
@@ -42,29 +47,28 @@ model Otp {
 
 model Cattle {
     id              Int             @id @default(autoincrement())
-    //type            CattleType   
-    name            String
-    description     String?
-    age             Int?
-    breed           String?
-    weight          Float?
-    price           Int?
-    milkYield       Float?
+    type            CattleType
+    name            String? // Nullable for optional cattle names
+    description     String
+    price           String
     location        String
-    latitude        Float?
-    longitude       Float?
-    postedById      Int
-    status          ActiveStatus    @default(ACTIVE)
-    deliveryOptions DeliveryOptions @default(SELF_PICKUP)
-    contactInfo     String?
-    createdAt       DateTime        @default(now())
-    updatedAt       DateTime        @updatedAt
-    users           Users           @relation(fields: [postedById], references: [id], onDelete: Cascade)
-    images          CattleImages[]
+    latitude        Float
+    longitude       Float
+    status          ActiveStatus    @default(Active)
+    deliveryOptions DeliveryOptions @default(Self_pickup)
 
-    @@index([latitude, longitude])
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    postedById Int
+    users      Users          @relation(fields: [postedById], references: [id], onDelete: Cascade)
+    images     CattleImages[]
+
+    // Indexes
+    @@index([latitude, longitude, updatedAt])
+    @@index([type])
     @@index([name])
-    //@@index([type])
     @@index([postedById], map: "cattle_postedById_fkey")
     @@map("cattle")
 }
@@ -72,8 +76,8 @@ model Cattle {
 model CattleImages {
     id        Int      @id @default(autoincrement())
     url       String
-    cattleId  Int
     createdAt DateTime @default(now())
+    cattleId  Int
     cattle    Cattle   @relation(fields: [cattleId], references: [id], onDelete: Cascade)
 
     @@index([cattleId], map: "cattle_images_cattleId_fkey")
@@ -81,14 +85,14 @@ model CattleImages {
 }
 
 enum CattleType {
-    COW
-    BUFFALO
-    SHEEP
-    GOAT
-    HEN
-    DOG
-    PIG
-    OTHERS
+    Cow
+    Bull
+    Buffalo
+    Sheep
+    Goat
+    Hen
+    Dog
+    Others
 }
 
 enum UsersOccupation {
@@ -100,23 +104,23 @@ enum UsersOccupation {
 }
 
 enum ActiveStatus {
-    ACTIVE
-    INACTIVE
+    Active
+    Inactive
 }
 
 enum ItemType {
-    CATTLE
-    TOOL
-    CROP
+    Cattle
+    Tools
+    Harvest
+    Transportation
 }
 
 enum ToolType {
-    MACHINERY
-    SPRAYERS
-    HAND_TOOLS
-    IRRIGATION_TOOLS
-    SAFETY_TOOLS
-    OTHER_TOOLS
+    Machinery
+    Sprayers
+    Safety
+    Irrigation
+    Others
 }
 
 enum Condition {
@@ -126,8 +130,8 @@ enum Condition {
 }
 
 enum DeliveryOptions {
-    SELF_PICKUP
-    DELIVERY_AVAILABLE
+    Self_pickup
+    Delivery_available
 }
 
 model MyPosts {
@@ -139,81 +143,179 @@ model MyPosts {
 
     user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@index([userId])
-    @@index([itemId])
-    @@index([itemType])
-    @@index([userId, itemId, itemType])
+    @@unique([userId, itemId, itemType])
+    @@index([userId, itemType])
     @@map("myposts")
 }
 
-model FarmTools {
-    id              Int              @id @default(autoincrement())
-    name            String
-    type            ToolType
-    description     String?
-    price           Int?
-    location        String
-    latitude        Float?
-    longitude       Float?
-    postedById      Int
-    status          ActiveStatus     @default(ACTIVE)
-    deliveryOptions DeliveryOptions  @default(SELF_PICKUP)
-    condition       Condition        @default(New)
-    contactInfo     String?
-    createdAt       DateTime         @default(now())
-    updatedAt       DateTime         @updatedAt
-    purchaseYear    Int?
-    images          FarmToolImages[]
-    postedBy        Users            @relation(fields: [postedById], references: [id], onDelete: Cascade)
+model Wishlist {
+    id       Int      @id @default(autoincrement())
+    userId   Int
+    itemType ItemType
+    itemId   Int
+    user     Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@index([name])
-    @@index([latitude, longitude])
-    @@index([type])
-    @@index([postedById], map: "farm_tools_postedById_fkey")
-    @@map("farm_tools")
+    @@unique([userId, itemId, itemType])
+    @@index([userId, itemType])
+    @@map("wishlist")
 }
 
-model FarmToolImages {
-    id         Int       @id @default(autoincrement())
-    url        String
-    farmToolId Int
-    createdAt  DateTime  @default(now())
-    farmTool   FarmTools @relation(fields: [farmToolId], references: [id], onDelete: Cascade)
+model Tools {
+    id              Int             @id @default(autoincrement())
+    name            String
+    type            ToolType
+    description     String
+    price           String
+    location        String
+    latitude        Float
+    longitude       Float
+    status          ActiveStatus    @default(Active)
+    deliveryOptions DeliveryOptions @default(Self_pickup)
 
-    @@index([farmToolId], map: "farm_tool_images_farmToolId_fkey")
-    @@map("farm_tool_images")
+    //metadata
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    //relations
+    postedById Int
+    postedBy   Users         @relation(fields: [postedById], references: [id], onDelete: Cascade)
+    images     ToolsImages[]
+
+    @@index([latitude, longitude, updatedAt])
+    @@index([name])
+    @@index([type])
+    @@index([postedById], map: "farm_tools_postedById_fkey")
+    @@map("tools")
+}
+
+model ToolsImages {
+    id        Int      @id @default(autoincrement())
+    url       String
+    createdAt DateTime @default(now())
+    toolId    Int
+    tool      Tools    @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+    @@index([toolId], map: "farm_tool_images_farmToolId_fkey")
+    @@map("tools_images")
+}
+
+model Harvest {
+    id              Int             @id @default(autoincrement())
+    name            String
+    type            HarvestType
+    description     String
+    price           String
+    location        String
+    latitude        Float
+    longitude       Float
+    status          ActiveStatus    @default(Active)
+    deliveryOptions DeliveryOptions @default(Self_pickup)
+
+    //metadata
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    //relations
+    postedById Int
+    postedBy   Users           @relation(fields: [postedById], references: [id], onDelete: Cascade)
+    images     HarvestImages[]
+
+    @@index([latitude, longitude, updatedAt])
+    @@index([name])
+    @@index([type])
+    @@index([postedById], map: "farm_tools_postedById_fkey")
+    @@map("harvest")
+}
+
+model HarvestImages {
+    id        Int      @id @default(autoincrement())
+    url       String
+    createdAt DateTime @default(now())
+    harvestId Int
+    harvest   Harvest  @relation(fields: [harvestId], references: [id], onDelete: Cascade)
+
+    @@index([harvestId])
+    @@map("harvest_images")
+}
+
+model Transportation {
+    id          Int          @id @default(autoincrement())
+    name        String?
+    type        VechileType
+    description String
+    price       String
+    location    String
+    latitude    Float
+    longitude   Float
+    status      ActiveStatus @default(Active)
+
+    //metadata
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    //relations
+    postedById Int
+    postedBy   Users                  @relation(fields: [postedById], references: [id], onDelete: Cascade)
+    images     TransportationImages[]
+
+    @@index([latitude, longitude, updatedAt])
+    @@index([type])
+    @@index([postedById], map: "farm_tools_postedById_fkey")
+    @@map("transportation")
+}
+
+model TransportationImages {
+    id               Int            @id @default(autoincrement())
+    url              String
+    createdAt        DateTime       @default(now())
+    transportationId Int
+    trasnportation   Transportation @relation(fields: [transportationId], references: [id], onDelete: Cascade)
+
+    @@index([transportationId])
+    @@map("transportation_images")
+}
+
+enum VechileType {
+    Lorry
+    Truck
+    Tractor
+    Auto
+    Others
+}
+
+enum HarvestType {
+    Vegetables
+    Fruits
+    Spices
+    Plants
+    Seeds
+    Manure
+    Grass
+    Crops
 }
 
 enum VetSpecialty {
-    GENERAL
-    SURGEON
-    NUTRITION
-    DENTAL
+    General
+    Surgeon
+    Nutrition
 }
 
 enum TechType {
-    ELECTRICIAN
-    MECHANIC
-}
-
-enum AvailabilityStatus {
-    AVAILABLE
-    UNAVAILABLE
-    BUSY
+    Electrician
+    Mechanic
 }
 
 model Veterinarian {
     id            Int          @id @default(autoincrement())
     userId        Int          @unique // Connects to registered user
     user          Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
-    specialty     VetSpecialty @default(GENERAL) // Enum for area of expertise
-    experience    Int? // Number of years of experience
+    specialty     VetSpecialty @default(General) // Enum for area of expertise
+    experience    String // Number of years of experience
     verified      Boolean      @default(false)
-    //availability  AvailabilityStatus    @default(AVAILABLE)
+    availability  Boolean      @default(true)
     location      String
     latitude      Float?
     longitude     Float?
-    info          String?
     imageUrl      String?
     ratings       VetRating[]
     averageRating Float?       @default(0)
@@ -221,7 +323,7 @@ model Veterinarian {
     createdAt     DateTime     @default(now())
     updatedAt     DateTime     @updatedAt
 
-    @@index([latitude, longitude])
+    @@index([latitude, longitude, updatedAt])
     @@index(userId)
     @@index(verified)
     @@map("veterinarian")
@@ -243,24 +345,23 @@ model VetRating {
 }
 
 model Technicians {
-    id            Int                @id @default(autoincrement())
-    userId        Int                @unique // Connects to registered user
-    user          Users              @relation(fields: [userId], references: [id], onDelete: Cascade)
-    type          TechType           @default(ELECTRICIAN)
-    experience    Int? // Number of years of experience
+    id            Int          @id @default(autoincrement())
+    userId        Int          @unique // Connects to registered user
+    user          Users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    type          TechType     @default(Electrician)
+    experience    String // Number of years of experience
     location      String
     latitude      Float?
     longitude     Float?
-    availability  AvailabilityStatus @default(AVAILABLE)
-    info          String?
+    availability  Boolean      @default(true)
     imageUrl      String?
     ratings       TechRating[]
-    averageRating Float?             @default(0)
-    ratingCount   Int                @default(0)
-    createdAt     DateTime           @default(now())
-    updatedAt     DateTime           @updatedAt
+    averageRating Float?       @default(0)
+    ratingCount   Int          @default(0)
+    createdAt     DateTime     @default(now())
+    updatedAt     DateTime     @updatedAt
 
-    @@index([latitude, longitude])
+    @@index([latitude, longitude, updatedAt])
     @@index(userId)
     @@index(type)
     @@map("technicians")
@@ -280,5 +381,3 @@ model TechRating {
     @@index(technicianId)
     @@map("tech_ratings")
 }
-
-

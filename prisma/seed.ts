@@ -4,9 +4,9 @@ import { faker } from "@faker-js/faker";
 const prisma = new PrismaClient();
 
 async function main() {
-   const count= await prisma.user.count()
+   const count= await prisma.users.count()
    console.log(count)
-   const user = await prisma.user.findFirst({
+   const user = await prisma.users.findFirst({
      where: {
        id: 10901,
      },
@@ -15,12 +15,12 @@ async function main() {
 
   for (let i = 0; i < 10000; i++) {
     
-    await prisma.user.create({
+    await prisma.users.create({
       data: {
-        name: faker.internet.username(),
+        userName: faker.internet.username(),
         email: faker.internet.email(),
         phoneNumber: faker.string.numeric(10),
-        occupation: 'FARMER'
+        occupation: 'Farmer'
       },
     });
   }

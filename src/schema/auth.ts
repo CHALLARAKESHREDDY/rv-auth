@@ -44,4 +44,9 @@ export const SignupVerifySchema = BaseSignupSchema.merge(OtpSchema).strict();
 export const LoginVerifySchema = OtpSchema.merge(LoginSchema).strict();
 
 // User update details schema, excluding phoneNumber
-export const userUpdateDetailsSchema = BaseSignupSchema.partial();
+export const userUpdateDetailsSchema = z.object({
+    name: z.string().min(4).max(20),
+    email: z.string().email().optional().nullable(),
+    calls:z.boolean().default(true),
+    messages:z.boolean().default(true)
+  });

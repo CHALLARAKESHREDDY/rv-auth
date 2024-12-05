@@ -52,10 +52,10 @@ export const getMyPosts = async (req: Request, res: Response): Promise<any> => {
 
   // Step 2: Build a query to fetch details of CATTLE and TOOL items in parallel
   const cattleIds = myPosts
-    .filter((post) => post.itemType === "CATTLE")
+    .filter((post) => post.itemType === "Cattle")
     .map((post) => post.itemId);
   const toolIds = myPosts
-    .filter((post) => post.itemType === "TOOL")
+    .filter((post) => post.itemType === "Tools")
     .map((post) => post.itemId);
 
   const [cattleDetails, toolDetails] = await Promise.all([
@@ -69,7 +69,7 @@ export const getMyPosts = async (req: Request, res: Response): Promise<any> => {
         images: { select: { url: true } },
       },
     }),
-    prisma.farmTools.findMany({
+    prisma.tools.findMany({
       where: { id: { in: toolIds } },
       select: {
         id: true,
@@ -111,16 +111,16 @@ export const deleteMypost = async (req: Request, res: Response) => {
     await tx.myPosts.delete({ where: { id: mypostId } });
 
     // Delete from respective tables and gather image URLs
-    if (post.itemType === "CATTLE") {
+    if (post.itemType === "Cattle") {
       imageUrls = (
         await tx.cattle.delete({
           where: { id: post.itemId },
           select: { images: { select: { url: true } } },
         })
       ).images.map((img) => img.url);
-    } else if (post.itemType === "TOOL") {
+    } else if (post.itemType === "Tools") {
       imageUrls = (
-        await tx.farmTools.delete({
+        await tx.tools.delete({
           where: { id: post.itemId },
           select: { images: { select: { url: true } } },
         })
